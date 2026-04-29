@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>050 통화관리 앱</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F4F6;
+  --surface: #FFFFFF;
+  --blue: #3182F6;
+  --blue2: #1B64DA;
+  --blue-light: #EBF3FF;
+  --green: #05C072;
+  --green-light: #E6FAF3;
+  --red: #F04452;
+  --red-light: #FFF0F2;
+  --yellow: #F5A623;
+  --yellow-light: #FFF8ED;
+  --gray100: #F2F4F6;
+  --gray200: #E5E8EB;
+  --gray300: #D1D6DB;
+  --gray400: #B0B8C1;
+  --gray500: #8B95A1;
+  --gray600: #6B7684;
+  --gray700: #4E5968;
+  --gray800: #333D4B;
+  --gray900: #191F28;
+  --t1: #191F28;
+  --t2: #4E5968;
+  --t3: #8B95A1;
+  --border: #E5E8EB;
+  --r: 16px;
+  --rs: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: #D8DEE8; }
+body { font-family: 'Noto Sans KR', sans-serif; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+
+/* PHONE */
+.phone { width: 100%; max-width: 390px; min-height: 100vh; background: var(--bg); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+/* SCREEN */
+.screen { display: none; flex-direction: column; min-height: 100vh; background: var(--bg); }
+.screen.active { display: flex; }
+
+/* STATUS BAR */
+.sb { height: 44px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
+.sb-time { font-size: 15px; font-weight: 700; color: var(--t1); }
+.sb-icons { font-size: 12px; color: var(--t2); display: flex; align-items: center; gap: 4px; }
+
+/* TOP BAR */
+.topbar { background: var(--surface); padding: 0 20px 14px; flex-shrink: 0; }
+.topbar-row { height: 48px; display: flex; align-items: center; justify-content: space-between; }
+.topbar-title { font-size: 17px; font-weight: 700; color: var(--t1); }
+.topbar-back { width: 40px; height: 40px; border-radius: 50%; background: none; border: none; font-size: 20px; color: var(--t1); cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: -8px; }
+.topbar-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--gray100); border: none; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.topbar-icon:hover { background: var(--gray200); }
+
+/* SCROLL */
+.scroll { flex: 1; overflow-y: auto; scrollbar-width: none; }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* CARD */
+.card { background: var(--surface); border-radius: var(--r); margin: 0 16px 10px; overflow: hidden; }
+.card-pd { padding: 18px 18px; }
+
+/* SECTION LABEL */
+.sec-label { font-size: 13px; font-weight: 600; color: var(--t3); letter-spacing: 0.3px; margin: 18px 20px 8px; }
+
+/* BADGE */
+.badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.badge-blue { background: var(--blue-light); color: var(--blue); }
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-red { background: var(--red-light); color: var(--red); }
+.badge-gray { background: var(--gray100); color: var(--t3); }
+.badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+
+/* BOTTOM NAV */
+.bnav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; background: var(--surface); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(4, 1fr); z-index: 50; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.bnav-item { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; gap: 3px; cursor: pointer; border: none; background: transparent; font-family: inherit; transition: all 0.15s; }
+.bnav-icon { font-size: 22px; }
+.bnav-label { font-size: 10px; color: var(--t3); }
+.bnav-item.active .bnav-label { color: var(--blue); font-weight: 700; }
+
+/* DIVIDER */
+.divider { height: 1px; background: var(--border); margin: 0 18px; }
+.divider-full { height: 8px; background: var(--bg); }
+
+/* INPUT */
+.input-wrap { display: flex; align-items: center; gap: 10px; background: var(--gray100); border-radius: var(--rs); padding: 13px 16px; transition: all 0.2s; }
+.input-wrap:focus-within { background: #fff; box-shadow: 0 0 0 2px var(--blue); }
+.input-wrap input { flex: 1; background: none; border: none; outline: none; font-size: 15px; color: var(--t1); font-family: inherit; }
+.input-wrap input::placeholder { color: var(--t3); }
+.input-icon { font-size: 16px; color: var(--t3); }
+
+/* BTN */
+.btn { padding: 15px; border-radius: var(--r); font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; border: none; transition: all 0.18s; width: 100%; text-align: center; }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue:hover { background: var(--blue2); }
+.btn-blue:active { transform: scale(0.98); }
+.btn-blue:disabled { background: var(--gray200); color: var(--t3); cursor: default; }
+.btn-outline { background: #fff; color: var(--t1); border: 1px solid var(--border); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-sm { padding: 9px 18px; font-size: 13px; font-weight: 600; border-radius: var(--rs); width: auto; }
+
+/* CHIP FILTER */
+.chips { display: flex; gap: 7px; overflow-x: auto; padding: 0 20px 12px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); color: var(--t2); font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
+.chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* ─── LOGIN ─── */
+#screen-login { background: var(--surface); }
+.login-hero { padding: 60px 28px 32px; }
+.login-logo { width: 52px; height: 52px; background: var(--blue); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 24px; }
+.login-title { font-size: 26px; font-weight: 800; color: var(--t1); letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.2; }
+.login-sub { font-size: 14px; color: var(--t3); }
+.login-form { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--t2); margin-bottom: 6px; display: block; }
+.form-inp { width: 100%; padding: 15px 16px; background: var(--gray100); border: 1.5px solid transparent; border-radius: var(--rs); font-size: 15px; font-family: inherit; color: var(--t1); outline: none; transition: all 0.2s; }
+.form-inp:focus { background: #fff; border-color: var(--blue); }
+.form-inp::placeholder { color: var(--t3); }
+.login-check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--t2); cursor: pointer; }
+.login-check input { accent-color: var(--blue); width: 18px; height: 18px; }
+.session-banner { margin: 0 20px 16px; background: var(--red-light); border-radius: var(--rs); padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+.session-banner-text { font-size: 13px; color: var(--red); font-weight: 500; line-height: 1.5; }
+
+/* ─── MAIN ─── */
+.my-number-card { background: linear-gradient(135deg, #1B64DA 0%, #3182F6 100%); border-radius: var(--r); margin: 16px 16px 10px; padding: 20px; }
+.mnc-label { font-size: 12px; color: rgba(255,255,255,0.65); margin-bottom: 6px; }
+.mnc-num { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: 1px; margin-bottom: 14px; }
+.mnc-row { display: flex; gap: 8px; }
+.mnc-badge { background: rgba(255,255,255,0.15); color: #fff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+.mnc-site { font-size: 12px; color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 4px; margin-top: 10px; }
+
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 16px 10px; }
+.stat-card { background: var(--surface); border-radius: var(--rs); padding: 14px; text-align: center; }
+.stat-num { font-size: 20px; font-weight: 800; color: var(--t1); letter-spacing: -0.5px; }
+.stat-label { font-size: 11px; color: var(--t3); margin-top: 3px; }
+
+.customer-item { display: flex; align-items: center; gap: 13px; padding: 16px 18px; cursor: pointer; transition: background 0.1s; }
+.customer-item:hover { background: var(--gray100); }
+.cust-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.cust-info { flex: 1; min-width: 0; }
+.cust-name { font-size: 15px; font-weight: 600; color: var(--t1); margin-bottom: 3px; }
+.cust-phone { font-size: 13px; color: var(--t3); font-family: monospace; letter-spacing: 0.5px; }
+.cust-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.cust-time { font-size: 11px; color: var(--t3); }
+
+/* ─── CUSTOMER DETAIL ─── */
+.info-card { background: var(--surface); border-radius: var(--r); margin: 0 16px 10px; }
+.info-row { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-label { font-size: 13px; color: var(--t3); }
+.info-value { font-size: 14px; font-weight: 600; color: var(--t1); font-family: monospace; letter-spacing: 0.5px; }
+.info-value.plain { font-family: inherit; letter-spacing: 0; }
+
+.call-btn { margin: 0 16px 10px; background: var(--blue); border-radius: var(--r); padding: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; border: none; font-family: inherit; transition: all 0.18s; }
+.call-btn:hover { background: var(--blue2); }
+.call-btn:active { transform: scale(0.98); }
+.call-btn-text { font-size: 16px; font-weight: 700; color: #fff; }
+
+.memo-card { background: var(--surface); border-radius: var(--r); margin: 0 16px 10px; padding: 18px; }
+.memo-input { width: 100%; background: var(--gray100); border: 1.5px solid transparent; border-radius: var(--rs); padding: 13px 14px; font-size: 14px; font-family: inherit; color: var(--t1); outline: none; resize: none; min-height: 90px; transition: all 0.2s; }
+.memo-input:focus { background: #fff; border-color: var(--blue); }
+.memo-input::placeholder { color: var(--t3); }
+
+.history-item { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.history-item:last-child { border-bottom: none; }
+.history-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.history-type { font-size: 13px; font-weight: 600; color: var(--t1); display: flex; align-items: center; gap: 6px; }
+.history-time { font-size: 11px; color: var(--t3); }
+.history-content { font-size: 13px; color: var(--t2); line-height: 1.5; }
+.history-duration { font-size: 11px; color: var(--t3); margin-top: 3px; }
+
+/* ─── SMART DIAL ─── */
+.dial-select-item { display: flex; align-items: center; gap: 13px; padding: 15px 18px; cursor: pointer; transition: background 0.1s; }
+.dial-select-item:hover { background: var(--gray100); }
+.dial-select-item.selected { background: var(--blue-light); }
+.dial-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--gray300); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.dial-select-item.selected .dial-check { background: var(--blue); border-color: var(--blue); color: #fff; font-size: 12px; }
+
+.confirm-card { background: var(--surface); border-radius: var(--r); margin: 0 16px; padding: 24px; text-align: center; }
+.confirm-icon { width: 64px; height: 64px; background: var(--blue-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px; }
+.confirm-label { font-size: 13px; color: var(--t3); margin-bottom: 4px; }
+.confirm-num { font-size: 22px; font-weight: 800; color: var(--t1); letter-spacing: 1px; margin-bottom: 6px; }
+.confirm-via { font-size: 13px; color: var(--t3); }
+.confirm-via strong { color: var(--blue); }
+
+.dial-status-card { background: var(--surface); border-radius: var(--r); margin: 0 16px; padding: 32px 24px; text-align: center; }
+.dial-pulse { width: 80px; height: 80px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px; animation: pulse-blue 1.5s infinite; }
+@keyframes pulse-blue { 0%,100% { box-shadow: 0 0 0 0 rgba(49,130,246,0.3); } 50% { box-shadow: 0 0 0 16px rgba(49,130,246,0); } }
+.dial-status-text { font-size: 16px; font-weight: 700; color: var(--t1); margin-bottom: 6px; }
+.dial-status-sub { font-size: 14px; color: var(--t3); margin-bottom: 28px; }
+.dial-timer { font-size: 32px; font-weight: 800; color: var(--t1); letter-spacing: 2px; margin-bottom: 32px; font-variant-numeric: tabular-nums; }
+
+/* ─── OVERLAY POPUP ─── */
+#screen-popup { background: rgba(0,0,0,0.92); }
+.popup-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.popup-image { width: 100%; max-width: 320px; aspect-ratio: 9/16; border-radius: 20px; overflow: hidden; position: relative; margin-bottom: 24px; }
+.popup-img-inner { width: 100%; height: 100%; background: linear-gradient(160deg, #1B64DA 0%, #3182F6 40%, #60A5FA 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; position: relative; overflow: hidden; }
+.popup-img-inner::before { content: ''; position: absolute; top: -40px; right: -40px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+.popup-img-inner::after { content: ''; position: absolute; bottom: -60px; left: -40px; width: 240px; height: 240px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+.popup-brand-name { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; position: relative; z-index: 1; }
+.popup-main-text { font-size: 28px; font-weight: 900; color: #fff; text-align: center; line-height: 1.2; margin-bottom: 12px; letter-spacing: -0.5px; position: relative; z-index: 1; }
+.popup-sub-text { font-size: 14px; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.6; position: relative; z-index: 1; }
+.popup-calling-bar { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+.popup-calling-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); animation: pulse-green 1s infinite; flex-shrink: 0; }
+@keyframes pulse-green { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.popup-calling-text { font-size: 14px; font-weight: 600; color: #fff; }
+.popup-calling-timer { margin-left: auto; font-size: 16px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.popup-info-text { font-size: 13px; color: rgba(255,255,255,0.5); text-align: center; line-height: 1.6; }
+.popup-end-btn { background: var(--red); border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer; border: none; margin-top: 20px; transition: all 0.18s; }
+.popup-end-btn:hover { transform: scale(1.05); }
+
+/* PERMISSION SCREEN */
+.perm-card { background: var(--surface); border-radius: var(--r); margin: 20px 20px; padding: 24px; }
+.perm-icon { width: 56px; height: 56px; background: var(--yellow-light); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 16px; }
+.perm-title { font-size: 18px; font-weight: 800; color: var(--t1); margin-bottom: 8px; line-height: 1.3; }
+.perm-desc { font-size: 14px; color: var(--t3); line-height: 1.7; margin-bottom: 20px; }
+.perm-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.perm-item { display: flex; align-items: flex-start; gap: 12px; }
+.perm-item-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.perm-item-text .perm-item-title { font-size: 14px; font-weight: 600; color: var(--t1); margin-bottom: 2px; }
+.perm-item-text .perm-item-desc { font-size: 12px; color: var(--t3); line-height: 1.5; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%) translateY(8px); background: var(--gray900); color: #fff; padding: 12px 20px; border-radius: 20px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.3s; z-index: 400; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ANIMATION */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.fade-up { animation: fadeUp 0.3s ease forwards; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- ════════ LOGIN ════════ -->
+<div id="screen-login" class="screen active">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+
+  <!-- 세션 만료 배너 (기본 숨김) -->
+  <div id="sessionBanner" style="display:none;margin:12px 20px 0;">
+    <div class="session-banner">
+      <span style="font-size:20px;">⏱️</span>
+      <div class="session-banner-text">세션이 만료됐습니다.<br>다시 로그인해 주세요.</div>
+    </div>
+  </div>
+
+  <div class="login-hero">
+    <div class="login-logo">050</div>
+    <div class="login-title">안녕하세요,<br>담당자님</div>
+    <div class="login-sub" style="margin-top:6px;">로그인 후 고객 상담을 시작하세요</div>
+  </div>
+
+  <div class="login-form">
+    <div>
+      <label class="form-label">이메일</label>
+      <input class="form-inp" type="email" placeholder="업무 이메일 입력" value="kim.cs@company.kr">
+    </div>
+    <div>
+      <label class="form-label">비밀번호</label>
+      <input class="form-inp" type="password" placeholder="비밀번호 입력" value="password123">
+    </div>
+    <label class="login-check">
+      <input type="checkbox" checked> 로그인 유지 (30일)
+    </label>
+    <div style="height:4px;"></div>
+    <button class="btn btn-blue" onclick="goScreen('main')">로그인</button>
+    <div style="text-align:center;font-size:13px;color:var(--t3);margin-top:4px;">비밀번호를 잊으셨나요? <span style="color:var(--blue);cursor:pointer;" onclick="toast('관리자에게 문의해 주세요.')">도움말</span></div>
+  </div>
+</div>
+
+<!-- ════════ MAIN ════════ -->
+<div id="screen-main" class="screen">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+  <div style="background:var(--surface);padding:14px 20px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div>
+      <div style="font-size:13px;color:var(--t3);margin-bottom:2px;">안녕하세요</div>
+      <div style="font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-0.3px;">김철수 님 👋</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="topbar-icon" onclick="goScreen('popup-perm')">🔔</button>
+      <button class="topbar-icon" onclick="goScreen('login');document.getElementById('sessionBanner').style.display='block'">👤</button>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding-bottom:80px;">
+
+    <!-- 내 050 번호 -->
+    <div class="my-number-card fade-up">
+      <div class="mnc-label">내 할당 050 번호</div>
+      <div class="mnc-num">050-2391-4821</div>
+      <div class="mnc-row">
+        <span class="mnc-badge">📞 활성</span>
+        <span class="mnc-badge">✅ 수신 가능</span>
+      </div>
+      <div class="mnc-site">📍 강남 래미안 A동</div>
+    </div>
+
+    <!-- 오늘 통계 -->
+    <div class="stat-row fade-up">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--blue);">12</div>
+        <div class="stat-label">오늘 통화</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--green);">9</div>
+        <div class="stat-label">연결 성공</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--red);">3</div>
+        <div class="stat-label">부재중</div>
+      </div>
+    </div>
+
+    <!-- 고객 검색 -->
+    <div style="padding:0 16px;margin-bottom:10px;">
+      <div class="input-wrap">
+        <span class="input-icon">🔍</span>
+        <input type="text" placeholder="고객명, 연락처 검색...">
+      </div>
+    </div>
+
+    <!-- 필터 -->
+    <div class="chips">
+      <button class="chip active" onclick="setChip(this)">전체</button>
+      <button class="chip" onclick="setChip(this)">미연결</button>
+      <button class="chip" onclick="setChip(this)">연결됨</button>
+      <button class="chip" onclick="setChip(this)">부재중</button>
+      <button class="chip" onclick="setChip(this)">상담완료</button>
+    </div>
+
+    <!-- 고객 리스트 -->
+    <div class="card" style="margin-bottom:10px;">
+      <div onclick="goScreen('detail')" class="customer-item">
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#3182F6,#60A5FA);">김</div>
+        <div class="cust-info">
+          <div class="cust-name">김○○ 고객</div>
+          <div class="cust-phone">010-****-3821</div>
+        </div>
+        <div class="cust-right">
+          <span class="badge badge-red">부재중</span>
+          <span class="cust-time">14분 전</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div onclick="goScreen('detail')" class="customer-item">
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#10B981,#34D399);">이</div>
+        <div class="cust-info">
+          <div class="cust-name">이○○ 고객</div>
+          <div class="cust-phone">010-****-9104</div>
+        </div>
+        <div class="cust-right">
+          <span class="badge badge-green">연결됨</span>
+          <span class="cust-time">1시간 전</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div onclick="goScreen('detail')" class="customer-item">
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D);">박</div>
+        <div class="cust-info">
+          <div class="cust-name">박○○ 고객</div>
+          <div class="cust-phone">010-****-5530</div>
+        </div>
+        <div class="cust-right">
+          <span class="badge badge-gray">대기중</span>
+          <span class="cust-time">어제</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div onclick="goScreen('detail')" class="customer-item">
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA);">최</div>
+        <div class="cust-info">
+          <div class="cust-name">최○○ 고객</div>
+          <div class="cust-phone">010-****-7712</div>
+        </div>
+        <div class="cust-right">
+          <span class="badge badge-blue">상담완료</span>
+          <span class="cust-time">어제</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bnav">
+    <button class="bnav-item active"><span class="bnav-icon">🏠</span><span class="bnav-label">홈</span></button>
+    <button class="bnav-item" onclick="goScreen('dial-select')"><span class="bnav-icon">📞</span><span class="bnav-label">다이얼</span></button>
+    <button class="bnav-item" onclick="goScreen('popup-perm')"><span class="bnav-icon">📋</span><span class="bnav-label">팝업 설정</span></button>
+    <button class="bnav-item" onclick="toast('마이페이지 준비중입니다.')"><span class="bnav-icon">👤</span><span class="bnav-label">내 정보</span></button>
+  </div>
+</div>
+
+<!-- ════════ CUSTOMER DETAIL ════════ -->
+<div id="screen-detail" class="screen">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+  <div class="topbar">
+    <div class="topbar-row">
+      <button class="topbar-back" onclick="goScreen('main')">←</button>
+      <span class="topbar-title">고객 상세</span>
+      <div style="width:40px;"></div>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding-bottom:30px;">
+
+    <!-- 고객 프로필 -->
+    <div style="background:var(--surface);padding:24px 20px;display:flex;align-items:center;gap:16px;margin-bottom:8px;">
+      <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#3182F6,#60A5FA);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;flex-shrink:0;">김</div>
+      <div>
+        <div style="font-size:20px;font-weight:800;color:var(--t1);margin-bottom:4px;">김○○ 고객</div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge badge-red">부재중</span>
+          <span class="badge badge-gray">강남 래미안 A동</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 마스킹된 정보 -->
+    <div class="info-card fade-up">
+      <div class="info-row">
+        <span class="info-label">연락처</span>
+        <span class="info-value">010-****-3821</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">050 발신 번호</span>
+        <span class="info-value" style="color:var(--blue);">050-2391-4821</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">최근 통화</span>
+        <span class="info-value plain" style="color:var(--t2);">2026.04.24 14:22</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">누적 통화</span>
+        <span class="info-value plain">4회</span>
+      </div>
+    </div>
+
+    <!-- 통화 버튼 -->
+    <button class="call-btn fade-up" onclick="goScreen('dial-confirm')">
+      <span style="font-size:22px;">📞</span>
+      <span class="call-btn-text">050으로 전화 연결</span>
+    </button>
+
+    <!-- 상담 메모 -->
+    <div class="memo-card fade-up">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:14px;font-weight:700;color:var(--t1);">상담 메모</span>
+        <button onclick="toast('메모가 저장됐습니다.')" style="font-size:13px;font-weight:600;color:var(--blue);background:none;border:none;font-family:inherit;cursor:pointer;">저장</button>
+      </div>
+      <textarea class="memo-input" placeholder="상담 내용을 입력하세요...">재건축 관련 문의. 이주 일정 확인 필요. 다음 주 재연락 예정.</textarea>
+    </div>
+
+    <!-- 이전 상담 이력 -->
+    <div class="sec-label">상담 이력</div>
+    <div class="card fade-up">
+      <div class="history-item">
+        <div class="history-top">
+          <div class="history-type">📝 <span>상담 메모</span></div>
+          <span class="history-time">04.22 15:30</span>
+        </div>
+        <div class="history-content">재건축 관련 문의. 이주 일정 확인 필요.</div>
+      </div>
+      <div class="history-item">
+        <div class="history-top">
+          <div class="history-type">📝 <span>상담 메모</span></div>
+          <span class="history-time">04.18 11:05</span>
+        </div>
+        <div class="history-content">분양 안내 자료 발송 요청. 이메일로 전달 완료.</div>
+      </div>
+    </div>
+
+    <!-- 통화 이력 -->
+    <div class="sec-label">통화 이력</div>
+    <div class="card fade-up" style="margin-bottom:20px;">
+      <div class="history-item">
+        <div class="history-top">
+          <div class="history-type">📞 <span style="color:var(--green);">연결 성공</span></div>
+          <span class="history-time">04.22 15:28</span>
+        </div>
+        <div class="history-duration">통화 시간 2분 34초</div>
+      </div>
+      <div class="history-item">
+        <div class="history-top">
+          <div class="history-type">📵 <span style="color:var(--red);">부재중</span></div>
+          <span class="history-time">04.22 14:10</span>
+        </div>
+        <div class="history-content" style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span class="badge badge-yellow">알림톡 발송</span></div>
+      </div>
+      <div class="history-item">
+        <div class="history-top">
+          <div class="history-type">📞 <span style="color:var(--green);">연결 성공</span></div>
+          <span class="history-time">04.18 11:02</span>
+        </div>
+        <div class="history-duration">통화 시간 4분 12초</div>
+      </div>
+      <div class="history-item">
+        <div class="history-top">
+          <div class="history-type">📵 <span style="color:var(--red);">부재중</span></div>
+          <span class="history-time">04.15 09:30</span>
+        </div>
+        <div class="history-content" style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span class="badge badge-yellow">알림톡 발송</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════ DIAL SELECT ════════ -->
+<div id="screen-dial-select" class="screen">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+  <div class="topbar">
+    <div class="topbar-row">
+      <button class="topbar-back" onclick="goScreen('main')">←</button>
+      <span class="topbar-title">스마트 다이얼</span>
+      <div style="width:40px;"></div>
+    </div>
+    <div style="padding-top:4px;">
+      <div class="input-wrap">
+        <span class="input-icon">🔍</span>
+        <input type="text" placeholder="고객명 검색...">
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding-bottom:120px;">
+    <div class="sec-label">발신할 고객을 선택하세요</div>
+    <div class="card">
+      <div class="dial-select-item selected" onclick="selectDial(this)">
+        <div class="dial-check">✓</div>
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#3182F6,#60A5FA);width:40px;height:40px;font-size:15px;flex-shrink:0;">김</div>
+        <div class="cust-info">
+          <div class="cust-name">김○○ 고객</div>
+          <div class="cust-phone">010-****-3821</div>
+        </div>
+        <span class="badge badge-red">부재중</span>
+      </div>
+      <div class="divider"></div>
+      <div class="dial-select-item" onclick="selectDial(this)">
+        <div class="dial-check"></div>
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#10B981,#34D399);width:40px;height:40px;font-size:15px;flex-shrink:0;">이</div>
+        <div class="cust-info">
+          <div class="cust-name">이○○ 고객</div>
+          <div class="cust-phone">010-****-9104</div>
+        </div>
+        <span class="badge badge-green">연결됨</span>
+      </div>
+      <div class="divider"></div>
+      <div class="dial-select-item" onclick="selectDial(this)">
+        <div class="dial-check"></div>
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D);width:40px;height:40px;font-size:15px;flex-shrink:0;">박</div>
+        <div class="cust-info">
+          <div class="cust-name">박○○ 고객</div>
+          <div class="cust-phone">010-****-5530</div>
+        </div>
+        <span class="badge badge-gray">대기중</span>
+      </div>
+      <div class="divider"></div>
+      <div class="dial-select-item" onclick="selectDial(this)">
+        <div class="dial-check"></div>
+        <div class="cust-avatar" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA);width:40px;height:40px;font-size:15px;flex-shrink:0;">최</div>
+        <div class="cust-info">
+          <div class="cust-name">최○○ 고객</div>
+          <div class="cust-phone">010-****-7712</div>
+        </div>
+        <span class="badge badge-blue">상담완료</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:390px;padding:16px 20px 32px;background:var(--surface);border-top:1px solid var(--border);">
+    <button class="btn btn-blue" onclick="goScreen('dial-confirm')">선택한 고객에게 전화하기</button>
+  </div>
+</div>
+
+<!-- ════════ DIAL CONFIRM ════════ -->
+<div id="screen-dial-confirm" class="screen">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+  <div class="topbar">
+    <div class="topbar-row">
+      <button class="topbar-back" onclick="goScreen('dial-select')">←</button>
+      <span class="topbar-title">발신 확인</span>
+      <div style="width:40px;"></div>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding-bottom:30px;">
+    <div style="height:24px;"></div>
+    <div class="confirm-card fade-up">
+      <div class="confirm-icon">📞</div>
+      <div class="confirm-label">발신 대상</div>
+      <div style="font-size:18px;font-weight:800;color:var(--t1);margin-bottom:4px;">김○○ 고객</div>
+      <div class="confirm-label" style="margin-top:20px;">고객 번호 (마스킹)</div>
+      <div class="confirm-num">010-****-3821</div>
+      <div style="height:1px;background:var(--border);margin:20px 0;"></div>
+      <div class="confirm-label">발신 050 번호</div>
+      <div style="font-size:20px;font-weight:800;color:var(--blue);margin-bottom:4px;letter-spacing:0.5px;">050-2391-4821</div>
+      <div class="confirm-via">담당 현장: <strong>강남 래미안 A동</strong></div>
+    </div>
+
+    <div style="background:var(--yellow-light);border-radius:var(--r);margin:0 16px 16px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;">
+      <span style="font-size:18px;">ℹ️</span>
+      <div style="font-size:13px;color:var(--yellow);line-height:1.6;">고객에게는 050 번호로 표시됩니다.<br>실제 번호는 노출되지 않습니다.</div>
+    </div>
+
+    <div style="padding:0 16px;display:flex;gap:10px;">
+      <button class="btn btn-outline" onclick="goScreen('dial-select')" style="flex:1;">취소</button>
+      <button class="btn btn-blue" onclick="startCall()" style="flex:2;">📞 전화 연결</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ DIAL STATUS ════════ -->
+<div id="screen-dial-status" class="screen">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+  <div style="background:var(--surface);padding:14px 20px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);flex-shrink:0;">
+    <span style="font-size:16px;font-weight:700;color:var(--t1);">통화 중</span>
+  </div>
+
+  <div class="scroll" style="padding-bottom:30px;">
+    <div style="height:40px;"></div>
+    <div class="dial-status-card fade-up">
+      <div class="dial-pulse" id="dialPulseIcon">📞</div>
+      <div class="dial-status-text" id="dialStatusText">연결 중...</div>
+      <div class="dial-status-sub" id="dialStatusSub">김○○ 고객에게 발신 중</div>
+      <div class="dial-timer" id="dialTimer">00:00</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;width:100%;margin-bottom:16px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <button onclick="toast('마이크가 음소거됐습니다.')" style="width:52px;height:52px;border-radius:50%;background:var(--gray100);border:none;font-size:22px;cursor:pointer;">🎤</button>
+          <span style="font-size:11px;color:var(--t3);">음소거</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <button onclick="toast('스피커가 켜졌습니다.')" style="width:52px;height:52px;border-radius:50%;background:var(--gray100);border:none;font-size:22px;cursor:pointer;">🔊</button>
+          <span style="font-size:11px;color:var(--t3);">스피커</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <button onclick="goScreen('popup')" style="width:52px;height:52px;border-radius:50%;background:var(--gray100);border:none;font-size:22px;cursor:pointer;">🖼️</button>
+          <span style="font-size:11px;color:var(--t3);">팝업보기</span>
+        </div>
+      </div>
+
+      <button onclick="endCall()" style="width:64px;height:64px;border-radius:50%;background:var(--red);border:none;font-size:28px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:all 0.18s;margin:0 auto;">📵</button>
+      <div style="font-size:12px;color:var(--t3);margin-top:10px;">통화 종료</div>
+    </div>
+
+    <div class="memo-card fade-up" style="margin-top:8px;">
+      <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:10px;">빠른 메모</div>
+      <textarea class="memo-input" placeholder="통화 중 메모를 입력하세요..." style="min-height:70px;"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ OVERLAY POPUP ════════ -->
+<div id="screen-popup" class="screen" style="background:#000;">
+  <div style="background:rgba(255,255,255,0.08);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <span style="font-size:13px;color:rgba(255,255,255,0.6);">통화 중 팝업</span>
+    <button onclick="goScreen('dial-status')" style="font-size:13px;color:rgba(255,255,255,0.6);background:none;border:none;font-family:inherit;cursor:pointer;">닫기 ✕</button>
+  </div>
+
+  <div class="popup-content">
+    <div class="popup-image">
+      <div class="popup-img-inner">
+        <div class="popup-brand-name">강남 래미안 A동</div>
+        <div class="popup-main-text">당신의 새로운 시작을 함께합니다</div>
+        <div class="popup-sub-text">맞춤형 상담 서비스로<br>최적의 주거 솔루션을 제공합니다</div>
+        <div style="position:absolute;bottom:60px;left:20px;right:20px;z-index:2;">
+          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:14px;backdrop-filter:blur(8px);">
+            <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:6px;">📞 상담 전화</div>
+            <div style="font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">050-2391-4821</div>
+          </div>
+        </div>
+        <div class="popup-calling-bar">
+          <div class="popup-calling-dot"></div>
+          <div class="popup-calling-text">통화 중</div>
+          <div class="popup-calling-timer" id="popupTimer">00:00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-info-text">통화가 종료되면 이 화면이 자동으로 닫힙니다</div>
+    <button class="popup-end-btn" onclick="goScreen('main');toast('통화가 종료됐습니다.')">📵</button>
+    <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:10px;">통화 종료</div>
+  </div>
+</div>
+
+<!-- ════════ PERMISSION ════════ -->
+<div id="screen-popup-perm" class="screen">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-icons">📶 🔋</span></div>
+  <div class="topbar">
+    <div class="topbar-row">
+      <button class="topbar-back" onclick="goScreen('main')">←</button>
+      <span class="topbar-title">팝업 권한 설정</span>
+      <div style="width:40px;"></div>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding-bottom:30px;">
+    <div style="height:16px;"></div>
+    <div class="perm-card fade-up">
+      <div class="perm-icon">📋</div>
+      <div class="perm-title">통화 중 팝업을 표시하려면<br>권한이 필요합니다</div>
+      <div class="perm-desc">050 통화 중 고객에게 현장 브랜드 이미지를 보여주기 위해 다음 권한이 필요합니다.</div>
+      <div class="perm-list">
+        <div class="perm-item">
+          <div class="perm-item-icon" style="background:var(--blue-light);">📞</div>
+          <div class="perm-item-text">
+            <div class="perm-item-title">전화 상태 확인</div>
+            <div class="perm-item-desc">통화 시작·종료를 감지해 팝업을 자동으로 열고 닫습니다.</div>
+          </div>
+        </div>
+        <div class="perm-item">
+          <div class="perm-item-icon" style="background:var(--green-light);">🖼️</div>
+          <div class="perm-item-text">
+            <div class="perm-item-title">다른 앱 위에 표시</div>
+            <div class="perm-item-desc">통화 중 화면 위에 브랜드 팝업을 오버레이로 표시합니다.</div>
+          </div>
+        </div>
+        <div class="perm-item">
+          <div class="perm-item-icon" style="background:var(--yellow-light);">🔔</div>
+          <div class="perm-item-text">
+            <div class="perm-item-title">알림 표시</div>
+            <div class="perm-item-desc">부재중 통화 발생 시 즉시 알림을 받을 수 있습니다.</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-blue" onclick="toast('권한이 허용됐습니다. ✅');goScreen('main')">권한 허용하기</button>
+      <div style="text-align:center;margin-top:12px;font-size:13px;color:var(--t3);cursor:pointer;" onclick="goScreen('main')">나중에 설정할게요</div>
+    </div>
+
+    <div style="margin:0 20px 16px;background:var(--surface);border-radius:var(--r);padding:18px;">
+      <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:12px;">현장별 팝업 이미지</div>
+      <div style="background:var(--gray100);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#1B64DA,#3182F6);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px;">강남 래미안 A동</div>
+          <div style="font-size:11px;color:var(--green);">✅ 팝업 이미지 설정됨</div>
+        </div>
+        <button onclick="goScreen('popup')" style="margin-left:auto;font-size:12px;color:var(--blue);background:none;border:none;font-family:inherit;cursor:pointer;">미리보기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* SCREEN NAV */
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if (id === 'dial-status') startCallTimer();
+  if (id === 'popup') startPopupTimer();
+}
+
+function setChip(el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectDial(el) {
+  document.querySelectorAll('.dial-select-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('.dial-check').textContent = '✓';
+  document.querySelectorAll('.dial-select-item:not(.selected) .dial-check').forEach(c => c.textContent = '');
+}
+
+/* CALL FLOW */
+let callInterval = null;
+let callSec = 0;
+let popupInterval = null;
+let popupSec = 0;
+
+function startCall() {
+  goScreen('dial-status');
+  callSec = 0;
+  const statusText = document.getElementById('dialStatusText');
+  const statusSub = document.getElementById('dialStatusSub');
+  statusText.textContent = '연결 중...';
+  statusSub.textContent = '김○○ 고객에게 발신 중';
+
+  setTimeout(() => {
+    statusText.textContent = '통화 중';
+    statusSub.textContent = '김○○ 고객';
+    document.getElementById('dialPulseIcon').textContent = '📞';
+    goScreen('popup');
+  }, 2000);
+}
+
+function startCallTimer() {
+  if (callInterval) clearInterval(callInterval);
+  callInterval = setInterval(() => {
+    callSec++;
+    document.getElementById('dialTimer').textContent = formatTime(callSec);
+  }, 1000);
+}
+
+function startPopupTimer() {
+  if (popupInterval) clearInterval(popupInterval);
+  popupSec = 0;
+  popupInterval = setInterval(() => {
+    popupSec++;
+    const el = document.getElementById('popupTimer');
+    if (el) el.textContent = formatTime(popupSec);
+  }, 1000);
+}
+
+function endCall() {
+  if (callInterval) clearInterval(callInterval);
+  if (popupInterval) clearInterval(popupInterval);
+  goScreen('main');
+  toast('통화가 종료됐습니다. 통화 시간 ' + formatTime(callSec));
+}
+
+function formatTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, '0');
+  const s = String(sec % 60).padStart(2, '0');
+  return m + ':' + s;
+}
+
+/* TOAST */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
